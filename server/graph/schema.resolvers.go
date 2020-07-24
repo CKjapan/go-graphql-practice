@@ -5,6 +5,7 @@ package graph
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 
@@ -16,7 +17,18 @@ import (
 )
 
 func (r *mutationResolver) CreateTodo(ctx context.Context, input model.NewTodo) (string, error) {
-	panic(fmt.Errorf("not implemented"))
+	log.Printf("[mutationResolver.CreateTodo] input: %#v", input)
+	id := util.CreateUniqueID()
+	err := dao.NewTodoDao(r.DB).InsertOne(&dao.Todo{
+		ID:     id,
+		Text:   input.Text,
+		Done:   false,
+		UserID: input.UserID,
+	})
+	if err != nil {
+		return "", err
+	}
+	return id, nil
 }
 
 func (r *mutationResolver) CreateUser(ctx context.Context, input model.NewUser) (string, error) {
@@ -38,30 +50,112 @@ func (r *mutationResolver) UpdateTodo(ctx context.Context, input model.EditTodo)
 
 func (r *mutationResolver) DeleteTodo(ctx context.Context, input string) (*models.Todo, error) {
 	panic(fmt.Errorf("not implemented"))
+	// log.Printf("[mutationResolver.DeleteTodo] id: %s", input)
+	// todo, err := dao.NewTodoDao(r.DB).DeleteOne(input)
+	// if err != nil {
+	// 	return nil, err
+	// }
+	// if todo == nil {
+	// 	return nil, errors.New("not found")
+	// }
+	// return &models.Todo{
+	// 	ID:   todo.ID,
+	// 	Text: todo.Text,
+	// 	Done: todo.Done,
+	// }, nil
 }
 
 func (r *queryResolver) Todos(ctx context.Context) ([]*models.Todo, error) {
-	panic(fmt.Errorf("not implemented"))
+	log.Println("[queryResolver.Todos]")
+	todos, err := dao.NewTodoDao(r.DB).FindAll()
+	if err != nil {
+		return nil, err
+	}
+	var results []*models.Todo
+	for _, todo := range todos {
+		results = append(results, &models.Todo{
+			ID:   todo.ID,
+			Text: todo.Text,
+			Done: todo.Done,
+		})
+	}
+	return results, nil
 }
 
 func (r *queryResolver) Todo(ctx context.Context, id string) (*models.Todo, error) {
-	panic(fmt.Errorf("not implemented"))
+	log.Printf("[queryResolver.Todo] id: %s", id)
+	todo, err := dao.NewTodoDao(r.DB).FindOne(id)
+	if err != nil {
+		return nil, err
+	}
+	if todo == nil {
+		return nil, errors.New("not found")
+	}
+	return &models.Todo{
+		ID:   todo.ID,
+		Text: todo.Text,
+		Done: todo.Done,
+	}, nil
 }
 
 func (r *queryResolver) Users(ctx context.Context) ([]*models.User, error) {
-	panic(fmt.Errorf("not implemented"))
+	log.Println("[queryResolver.Users]")
+	users, err := dao.NewUserDao(r.DB).FindAll()
+	if err != nil {
+		return nil, err
+	}
+	var results []*models.User
+	for _, user := range users {
+		results = append(results, &models.User{
+			ID:   user.ID,
+			Name: user.Name,
+		})
+	}
+	return results, nil
 }
 
 func (r *queryResolver) User(ctx context.Context, id string) (*models.User, error) {
-	panic(fmt.Errorf("not implemented"))
+	log.Printf("[queryResolver.User] id: %s", id)
+	user, err := dao.NewUserDao(r.DB).FindOne(id)
+	if err != nil {
+		return nil, err
+	}
+	if user == nil {
+		return nil, errors.New("not found")
+	}
+	return &models.User{
+		ID:   user.ID,
+		Name: user.Name,
+	}, nil
 }
 
 func (r *todoResolver) User(ctx context.Context, obj *models.Todo) (*models.User, error) {
-	panic(fmt.Errorf("not implemented"))
+	log.Printf("[todoResolver.User] id: %#v", obj)
+	user, err := dao.NewUserDao(r.DB).FindByTodoID(obj.ID)
+	if err != nil {
+		return nil, err
+	}
+	return &models.User{
+		ID:   user.ID,
+		Name: user.Name,
+	}, nil
 }
 
 func (r *userResolver) Todos(ctx context.Context, obj *models.User) ([]*models.Todo, error) {
-	panic(fmt.Errorf("not implemented"))
+	log.Println("[userResolver.Todos]")
+	todos, err := dao.NewTodoDao(r.DB).FindByUserID(obj.ID)
+	if err != nil {
+		return nil, err
+	}
+	var results []*models.Todo
+	for _, todo := range todos {
+		results = append(results, &models.Todo{
+			ID:   todo.ID,
+			Text: todo.Text,
+			Done: todo.Done,
+		})
+	}
+	return results, nil
 }
 
 // Mutation returns generated.MutationResolver implementation.

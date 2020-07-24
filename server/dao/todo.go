@@ -23,6 +23,7 @@ type TodoDao interface {
 	FindAll() ([]*Todo, error)
 	FindByUserID(userID string) ([]*Todo, error)
 	FindOne(id string) (*Todo, error)
+	// DeleteOne(id string) (*Todo, error)
 }
 
 type todoDao struct {
@@ -41,6 +42,19 @@ func (d *todoDao) InsertOne(u *Todo) error {
 	}
 	return nil
 }
+
+// func (d *todoDao) DeleteOne(id string) (*Todo, error) {
+// 	var todos []*Todo
+// 	res := d.db.Where("id = ?", id).Delete(&todos)
+// 	if err := res.Error; err != nil {
+// 		return nil, err
+// 	}
+// 	if len(todos) < 1 {
+// 		return nil, nil
+// 	}
+// 	return todos[0], nil
+// }
+
 func (d *todoDao) FindAll() ([]*Todo, error) {
 	var todos []*Todo
 	res := d.db.Find(&todos)
